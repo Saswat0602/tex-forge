@@ -7,22 +7,24 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
 
-export type ActionResponse = {
+export type ActionResponse<T = unknown> = {
   ok: boolean;
   error?: string;
-  data?: any;
+  data?: T;
 };
 
 // Reusable function to get authenticated user ID
-async function getUserId() {
+async function getUserId(): Promise<string> {
   const session = await getServerSession(authOptions);
-  if (!session?.user || !(session.user as any).id) {
+  const sessionUser = session?.user as { id?: string } | undefined;
+  if (!sessionUser || !sessionUser.id) {
     throw new Error("Unauthorized");
   }
-  return (session.user as any).id;
+  return sessionUser.id;
 }
 
-export async function getProjects(): Promise<ActionResponse> {
+type ProjectData = { id: string; title: string; updatedAt: Date; createdAt: Date; };
+export async function getProjects(): Promise<ActionResponse<ProjectData[]>> {
   try {
     const userId = await getUserId();
     await dbConnect();
@@ -44,7 +46,7 @@ export async function getProjects(): Promise<ActionResponse> {
   }
 }
 
-export async function createProject(input: CreateProjectInput): Promise<ActionResponse> {
+export async function createProject(input: CreateProjectInput): Promise<ActionResponse<{ id: string }>> {
   try {
     const userId = await getUserId();
     const { title } = CreateProjectSchema.parse(input);
@@ -54,7 +56,14 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
     const newProject = await Project.create({
       userId,
       title,
-      texContent: "\\documentclass{article}\n\\begin{document}\n\nHello World!\n\n\\end{document}",
+      files: [
+        {
+          name: "main.tex",
+          content: "\\documentclass{article}\n\\begin{document}\n\nHello World!\n\n\\end{document}",
+          type: "text",
+          isMain: true,
+        }
+      ],
     });
 
     revalidatePath("/dashboard");
@@ -74,7 +83,7 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
   }
 }
 
-export async function deleteProject(projectId: string): Promise<ActionResponse> {
+export async function deleteProject(projectId: string): Promise<ActionResponse<void>> {
   try {
     const userId = await getUserId();
     await dbConnect();
@@ -94,7 +103,7 @@ export async function deleteProject(projectId: string): Promise<ActionResponse> 
   }
 }
 
-export async function duplicateProject(projectId: string): Promise<ActionResponse> {
+export async function duplicateProject(projectId: string): Promise<ActionResponse<{ id: string }>> {
   try {
     const userId = await getUserId();
     await dbConnect();
@@ -108,7 +117,13 @@ export async function duplicateProject(projectId: string): Promise<ActionRespons
     const newProject = await Project.create({
       userId,
       title: `${existingProject.title} (Copy)`,
-      texContent: existingProject.texContent,
+      files: existingProject.files.map(f => ({
+        name: f.name,
+        content: f.content,
+        type: f.type,
+        url: f.url,
+        isMain: f.isMain,
+      })),
     });
 
     revalidatePath("/dashboard");

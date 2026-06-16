@@ -1,9 +1,17 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+export interface IFile {
+  name: string;
+  content?: string;
+  type: "text" | "image" | "pdf";
+  url?: string;
+  isMain: boolean;
+}
+
 export interface IProject extends Document {
   userId: mongoose.Types.ObjectId;
   title: string;
-  texContent: string;
+  files: IFile[];
   pdfUrl?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -23,10 +31,15 @@ const ProjectSchema: Schema<IProject> = new Schema(
       maxlength: [100, "Title cannot be more than 100 characters"],
       default: "Untitled Project",
     },
-    texContent: {
-      type: String,
-      default: "\\documentclass{article}\n\\begin{document}\n\nHello World!\n\n\\end{document}",
-    },
+    files: [
+      {
+        name: { type: String, required: true },
+        content: { type: String, default: "" },
+        type: { type: String, enum: ["text", "image", "pdf"], default: "text" },
+        url: { type: String },
+        isMain: { type: Boolean, default: false },
+      },
+    ],
     pdfUrl: {
       type: String,
     },

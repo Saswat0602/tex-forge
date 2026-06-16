@@ -35,7 +35,7 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {projects.map((project: any) => (
+          {(projects as Array<{ id: string, title: string, updatedAt: Date, createdAt: Date }>).map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>

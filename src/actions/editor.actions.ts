@@ -38,7 +38,7 @@ export async function saveProjectFiles(projectId: string, files: SaveFilesInput)
     const project = await Project.findOneAndUpdate(
       { _id: projectId, userId },
       { $set: { files, updatedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!project) {

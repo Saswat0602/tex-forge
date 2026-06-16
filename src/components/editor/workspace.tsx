@@ -4,8 +4,10 @@ import { useEffect, useRef } from "react";
 import { useEditorStore, ProjectFile } from "@/stores/editorStore";
 import { Sidebar } from "./sidebar";
 import { CodeEditor } from "./code-editor";
-import { PdfPreview } from "./pdf-preview";
 import { saveProjectFiles } from "@/actions/editor.actions";
+import dynamic from "next/dynamic";
+
+const PdfPreview = dynamic(() => import("./pdf-preview").then((mod) => mod.PdfPreview), { ssr: false });
 
 type WorkspaceProps = {
   projectId: string;

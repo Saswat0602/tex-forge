@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 
 export default function Navbar() {
   return (
@@ -13,15 +14,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <div className="h-4 w-px bg-border hidden sm:block"></div>
-          <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-          >
-            Sign Up
-          </Link>
+          <UserMenu />
         </div>
       </div>
     </header>

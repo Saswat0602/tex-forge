@@ -23,3 +23,13 @@ export const RegisterSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+
+export const CreateProjectSchema = z.object({
+  title: z.string().min(1, {
+    message: "Project title is required.",
+  }).max(100, {
+    message: "Project title cannot exceed 100 characters.",
+  }),
+});
+
+export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;

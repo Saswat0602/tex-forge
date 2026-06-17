@@ -84,7 +84,8 @@ export function PdfPreview() {
               onClick={() => {
                 const a = document.createElement("a");
                 a.href = pdfUrl;
-                a.download = `${title || "document"}.pdf`;
+                const safeTitle = (title || "document").replace(/[^a-zA-Z0-9_-]/g, "_");
+                a.download = `${safeTitle}.pdf`;
                 a.click();
               }}
               className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors mr-2 border border-transparent hover:border-border"

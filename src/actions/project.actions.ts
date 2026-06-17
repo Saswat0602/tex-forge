@@ -135,3 +135,31 @@ export async function duplicateProject(projectId: string): Promise<ActionRespons
     return { ok: false, error: "Failed to duplicate project." };
   }
 }
+
+export async function renameProject(projectId: string, newTitle: string): Promise<ActionResponse<void>> {
+  try {
+    const userId = await getUserId();
+    
+    if (!newTitle || newTitle.trim() === "") {
+      return { ok: false, error: "Project title cannot be empty." };
+    }
+
+    await dbConnect();
+
+    const project = await Project.findOneAndUpdate(
+      { _id: projectId, userId },
+      { $set: { title: newTitle.trim() } }
+    );
+    
+    if (!project) {
+      return { ok: false, error: "Project not found or unauthorized." };
+    }
+
+    revalidatePath("/dashboard");
+
+    return { ok: true };
+  } catch (error: unknown) {
+    console.error("Rename Project Error:", error);
+    return { ok: false, error: "Failed to rename project." };
+  }
+}

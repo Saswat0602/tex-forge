@@ -36,30 +36,19 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Project has no content to compile", { status: 400 });
     }
 
-    // A basic bundler: replace \input{filename} or \include{filename} with the actual content
-    let bundledContent = mainFile.content;
-    const inputRegex = /\\(?:input|include)\{([^}]+)\}/g;
-    
-    bundledContent = bundledContent.replace(inputRegex, (match, filename) => {
-      // Find the file in our project array (with or without .tex extension)
-      const includedFile = files.find(
-        (f) => f.name === filename || f.name === `${filename}.tex`
-      );
-      
-      if (includedFile && includedFile.content) {
-        return `\n% --- Begin ${includedFile.name} ---\n${includedFile.content}\n% --- End ${includedFile.name} ---\n`;
-      }
-      
-      return match; // If not found, leave it as is (compiler will throw an error)
-    });
+    const compilerUrl = process.env.COMPILER_URL || 'http://localhost:4000/compile';
 
-    // We use latexonline.cc for compilation. It accepts a GET request with the text.
-    const response = await fetch(
-      `https://latexonline.cc/compile?text=${encodeURIComponent(bundledContent)}`,
-      {
-        method: "GET",
-      }
-    );
+    // We use our local compilation service. It accepts a POST request with the files.
+    const response = await fetch(compilerUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        files: files.map((f) => ({ name: f.name, content: f.content })),
+        mainFile: mainFile.name,
+      }),
+    });
 
     if (!response.ok) {
       // Return the error log if possible

@@ -17,32 +17,31 @@ export function ProjectCard({ project }: { project: ProjectProps }) {
   }).format(new Date(project.updatedAt));
 
   return (
-    <div className="group flex flex-col justify-between border rounded-lg bg-card text-card-foreground shadow-sm hover:shadow-md transition-all hover:border-primary/50">
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <Link href={`/editor/${project.id}`} className="flex items-center gap-3 hover:underline">
-            <div className="p-2 bg-primary/10 rounded-md text-primary">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg line-clamp-1">{project.title}</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Modified {formattedDate}
-              </p>
-            </div>
+    <div className="group grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors">
+      <div className="col-span-12 sm:col-span-5 md:col-span-6 flex items-center gap-3">
+        <div className="p-2 bg-primary/10 rounded-md text-primary shrink-0 hidden sm:block">
+          <FileText className="w-5 h-5" />
+        </div>
+        <div className="min-w-0">
+          <Link href={`/editor/${project.id}`} className="font-medium text-base hover:underline hover:text-primary truncate block">
+            {project.title}
           </Link>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <ProjectCardActions projectId={project.id} />
-          </div>
+          <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
+            Modified {formattedDate}
+          </p>
         </div>
       </div>
-      <div className="px-5 py-3 border-t bg-muted/20 flex justify-end">
-        <Link 
-          href={`/editor/${project.id}`}
-          className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          Open Editor &rarr;
-        </Link>
+      
+      <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-sm text-muted-foreground">
+        You
+      </div>
+      
+      <div className="col-span-3 md:col-span-2 hidden sm:flex items-center text-sm text-muted-foreground">
+        {formattedDate}
+      </div>
+      
+      <div className="col-span-12 sm:col-span-1 md:col-span-2 flex items-center sm:justify-end mt-2 sm:mt-0">
+        <ProjectCardActions projectId={project.id} projectTitle={project.title} />
       </div>
     </div>
   );

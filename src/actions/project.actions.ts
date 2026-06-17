@@ -163,3 +163,28 @@ export async function renameProject(projectId: string, newTitle: string): Promis
     return { ok: false, error: "Failed to rename project." };
   }
 }
+
+export async function exportProjectFiles(projectId: string): Promise<ActionResponse<{ name: string; content: string; type: string }[]>> {
+  try {
+    const userId = await getUserId();
+    await dbConnect();
+
+    const project = await Project.findOne({ _id: projectId, userId }).lean();
+    
+    if (!project) {
+      return { ok: false, error: "Project not found or unauthorized." };
+    }
+
+    return {
+      ok: true,
+      data: project.files.map((f: any) => ({
+        name: f.name,
+        content: f.content || "",
+        type: f.type || "text",
+      })),
+    };
+  } catch (error: unknown) {
+    console.error("Export Project Error:", error);
+    return { ok: false, error: "Failed to fetch project files." };
+  }
+}

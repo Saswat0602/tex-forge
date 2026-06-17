@@ -34,10 +34,18 @@ export default async function DashboardPage() {
           <CreateProjectDialog />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {(projects as Array<{ id: string, title: string, updatedAt: Date, createdAt: Date }>).map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+        <div className="border rounded-md bg-card overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 text-sm font-medium text-muted-foreground hidden sm:grid">
+            <div className="col-span-12 sm:col-span-5 md:col-span-6">Title</div>
+            <div className="col-span-3 md:col-span-2 hidden sm:block">Owner</div>
+            <div className="col-span-3 md:col-span-2 hidden sm:block">Last modified</div>
+            <div className="col-span-1 md:col-span-2 text-right hidden sm:block">Actions</div>
+          </div>
+          <div className="divide-y">
+            {(projects as Array<{ id: string, title: string, updatedAt: Date, createdAt: Date }>).map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, PenLine, ExternalLink, Copy, Trash2, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { deleteProject, duplicateProject, renameProject } from "@/actions/project.actions";
+import { Copy, Trash2, Loader2, Download, Archive, PenLine } from "lucide-react";
+import { deleteProject, duplicateProject, exportProjectFiles, renameProject } from "@/actions/project.actions";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
-export function ProjectCardActions({ projectId }: { projectId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function ProjectCardActions({ projectId, projectTitle }: { projectId: string, projectTitle: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
-  const router = useRouter();
 
-  const handleDuplicate = async () => {
-    setIsOpen(false);
+  const handleDuplicate = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDuplicating(true);
     try {
       const res = await duplicateProject(projectId);
@@ -30,10 +31,11 @@ export function ProjectCardActions({ projectId }: { projectId: string }) {
     }
   };
 
-  const handleRename = async () => {
-    setIsOpen(false);
-    const newTitle = prompt("Enter new project title:");
-    if (!newTitle || newTitle.trim() === "") return;
+  const handleRename = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newTitle = prompt("Enter new project title:", projectTitle);
+    if (!newTitle || newTitle.trim() === "" || newTitle === projectTitle) return;
 
     setIsRenaming(true);
     try {
@@ -50,8 +52,71 @@ export function ProjectCardActions({ projectId }: { projectId: string }) {
     }
   };
 
-  const handleDelete = async () => {
-    setIsOpen(false);
+  const handleDownloadSource = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDownloading(true);
+    try {
+      const res = await exportProjectFiles(projectId);
+      if (res.ok && res.data) {
+        const mainFile = res.data.find((f: any) => f.name.endsWith('.tex')) || res.data[0];
+        if (!mainFile) {
+          toast.error("No source file found");
+          return;
+        }
+        const blob = new Blob([mainFile.content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeTitle = (projectTitle || "document").replace(/[^a-zA-Z0-9_-]/g, "_");
+        a.download = `${safeTitle}.tex`;
+        a.click();
+      } else {
+        toast.error(res.error || "Failed to download source");
+      }
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadZip = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsZipping(true);
+    try {
+      const res = await exportProjectFiles(projectId);
+      if (res.ok && res.data) {
+        const zip = new JSZip();
+        res.data.forEach((file: any) => {
+          if (file.type === "image" && file.content.startsWith("data:")) {
+             const base64Data = file.content.split(",")[1];
+             zip.file(file.name, base64Data, { base64: true });
+          } else {
+             zip.file(file.name, file.content);
+          }
+        });
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeTitle = (projectTitle || "document").replace(/[^a-zA-Z0-9_-]/g, "_");
+        a.download = `${safeTitle}.zip`;
+        a.click();
+      } else {
+        toast.error(res.error || "Failed to create ZIP");
+      }
+    } catch {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm("Are you sure you want to delete this project? This cannot be undone.")) return;
     
     setIsDeleting(true);
@@ -69,59 +134,50 @@ export function ProjectCardActions({ projectId }: { projectId: string }) {
     }
   };
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={isDeleting || isDuplicating || isRenaming}
-        className="p-2 hover:bg-muted rounded-md transition-colors"
-      >
-        {isDeleting || isDuplicating || isRenaming ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <MoreVertical className="w-4 h-4" />
-        )}
-      </button>
+  const isWorking = isDeleting || isDuplicating || isDownloading || isZipping || isRenaming;
 
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 mt-2 w-48 bg-popover text-popover-foreground border rounded-md shadow-lg z-50 py-1.5 text-sm overflow-hidden">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                router.push(`/editor/${projectId}`);
-              }}
-              className="w-full text-left px-3 py-2 hover:bg-muted focus:bg-muted flex items-center gap-2 outline-none transition-colors"
-            >
-              <ExternalLink className="w-4 h-4 text-muted-foreground" /> Open Editor
-            </button>
-            <button
-              onClick={handleRename}
-              className="w-full text-left px-3 py-2 hover:bg-muted focus:bg-muted flex items-center gap-2 outline-none transition-colors"
-            >
-              <PenLine className="w-4 h-4 text-muted-foreground" /> Rename
-            </button>
-            <div className="h-px bg-border my-1 mx-2" />
-            <button
-              onClick={handleDuplicate}
-              className="w-full text-left px-3 py-2 hover:bg-muted focus:bg-muted flex items-center gap-2 outline-none transition-colors"
-            >
-              <Copy className="w-4 h-4 text-muted-foreground" /> Duplicate
-            </button>
-            <div className="h-px bg-border my-1 mx-2" />
-            <button
-              onClick={handleDelete}
-              className="w-full text-left px-3 py-2 hover:bg-destructive/10 focus:bg-destructive/10 text-destructive flex items-center gap-2 outline-none transition-colors"
-            >
-              <Trash2 className="w-4 h-4" /> Delete
-            </button>
-          </div>
-        </>
-      )}
+  return (
+    <div className="flex items-center gap-1 sm:gap-1.5">
+      <button
+        onClick={handleDuplicate}
+        disabled={isWorking}
+        title="Duplicate"
+        className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+      >
+        {isDuplicating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+      </button>
+      <button
+        onClick={handleRename}
+        disabled={isWorking}
+        title="Rename"
+        className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+      >
+        {isRenaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <PenLine className="w-4 h-4" />}
+      </button>
+      <button
+        onClick={handleDownloadSource}
+        disabled={isWorking}
+        title="Download Main Source"
+        className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+      >
+        {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+      </button>
+      <button
+        onClick={handleDownloadZip}
+        disabled={isWorking}
+        title="Download ZIP"
+        className="p-1.5 sm:p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
+      >
+        {isZipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+      </button>
+      <button
+        onClick={handleDelete}
+        disabled={isWorking}
+        title="Delete"
+        className="p-1.5 sm:p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50"
+      >
+        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+      </button>
     </div>
   );
 }

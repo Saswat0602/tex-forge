@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        files: files.map((f) => ({ name: f.name, content: f.content })),
+        files: files.map((f) => ({ name: f.name, content: f.content, type: f.type })),
         mainFile: mainFile.name,
       }),
     });

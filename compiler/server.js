@@ -21,7 +21,13 @@ app.post('/compile', async (req, res) => {
     // Write all files to temp directory
     for (const file of files) {
       if (file.name && file.content) {
-        await fs.writeFile(path.join(tmpDir, file.name), file.content);
+        if (file.type === 'image' || file.name.match(/\.(png|jpg|jpeg)$/i)) {
+          const base64Data = file.content.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          await fs.writeFile(path.join(tmpDir, file.name), buffer);
+        } else {
+          await fs.writeFile(path.join(tmpDir, file.name), file.content);
+        }
       }
     }
 
@@ -30,6 +36,11 @@ app.post('/compile', async (req, res) => {
     exec(`tectonic "${mainFile}"`, { cwd: tmpDir }, async (error, stdout, stderr) => {
       if (error) {
         console.error('Compilation Error:', stderr || stdout);
+        try {
+          await fs.rm(tmpDir, { recursive: true, force: true });
+        } catch (cleanupErr) {
+          console.error('Failed to cleanup temp dir:', cleanupErr);
+        }
         return res.status(500).send(stderr || stdout || error.message);
       }
 

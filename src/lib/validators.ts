@@ -30,6 +30,7 @@ export const CreateProjectSchema = z.object({
   }).max(100, {
     message: "Project title cannot exceed 100 characters.",
   }),
+  templateId: z.string().optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;

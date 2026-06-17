@@ -20,7 +20,7 @@ type EditorState = {
   setProjectData: (id: string, title: string, files: ProjectFile[]) => void;
   setActiveFile: (fileName: string) => void;
   updateFileContent: (fileName: string, content: string) => void;
-  addFile: (fileName: string, type: "text" | "image" | "pdf") => void;
+  addFile: (fileName: string, type: "text" | "image" | "pdf", content?: string) => void;
   deleteFile: (fileName: string) => void;
   renameFile: (oldName: string, newName: string) => void;
   setIsSaving: (isSaving: boolean) => void;
@@ -59,13 +59,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
 
-  addFile: (fileName, type) => {
+  addFile: (fileName, type, content = "") => {
     set((state) => {
       if (state.files.some((f) => f.name === fileName)) return state; // Avoid duplicates
       
       const newFile: ProjectFile = {
         name: fileName,
-        content: "",
+        content,
         type,
         isMain: false,
       };

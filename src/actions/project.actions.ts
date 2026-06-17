@@ -6,6 +6,7 @@ import { CreateProjectInput, CreateProjectSchema } from "@/lib/validators";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
+import { TEMPLATES } from "@/constants/templates";
 
 export type ActionResponse<T = unknown> = {
   ok: boolean;
@@ -49,21 +50,16 @@ export async function getProjects(): Promise<ActionResponse<ProjectData[]>> {
 export async function createProject(input: CreateProjectInput): Promise<ActionResponse<{ id: string }>> {
   try {
     const userId = await getUserId();
-    const { title } = CreateProjectSchema.parse(input);
+    const { title, templateId } = CreateProjectSchema.parse(input);
 
     await dbConnect();
+
+    const template = TEMPLATES.find(t => t.id === templateId) || TEMPLATES[0];
 
     const newProject = await Project.create({
       userId,
       title,
-      files: [
-        {
-          name: "main.tex",
-          content: "\\documentclass{article}\n\\begin{document}\n\nHello World!\n\n\\end{document}",
-          type: "text",
-          isMain: true,
-        }
-      ],
+      files: template.files,
     });
 
     revalidatePath("/dashboard");

@@ -8,6 +8,7 @@ import { createProject } from "@/actions/project.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, X, Loader2 } from "lucide-react";
+import { TEMPLATES } from "@/constants/templates";
 
 export function CreateProjectDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +24,7 @@ export function CreateProjectDialog() {
     resolver: zodResolver(CreateProjectSchema),
     defaultValues: {
       title: "Untitled Project",
+      templateId: "blank",
     },
   });
 
@@ -87,6 +89,28 @@ export function CreateProjectDialog() {
                   <p className="text-sm text-destructive">{errors.title.message}</p>
                 )}
               </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="templateId" className="text-sm font-medium leading-none">
+                  Template
+                </label>
+                <select
+                  {...register("templateId")}
+                  id="templateId"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {TEMPLATES.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} - {template.description}
+                    </option>
+                  ))}
+                </select>
+                {errors.templateId && (
+                  <p className="text-sm text-destructive">{errors.templateId.message}</p>
+                )}
+              </div>
+              
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
                 <button
                   type="button"

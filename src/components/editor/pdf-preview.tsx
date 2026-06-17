@@ -1,7 +1,7 @@
 "use client";
 
 import { useEditorStore } from "@/stores/editorStore";
-import { Play, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Play, Loader2, ZoomIn, ZoomOut, Download } from "lucide-react";
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -11,7 +11,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export function PdfPreview() {
-  const { isCompiling, setIsCompiling, projectId, isSaving } = useEditorStore();
+  const { isCompiling, setIsCompiling, projectId, isSaving, title } = useEditorStore();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [errorLog, setErrorLog] = useState<string | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
@@ -77,6 +77,21 @@ export function PdfPreview() {
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
             </div>
+          )}
+
+          {pdfUrl && (
+            <button
+              onClick={() => {
+                const a = document.createElement("a");
+                a.href = pdfUrl;
+                a.download = `${title || "document"}.pdf`;
+                a.click();
+              }}
+              className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors mr-2 border border-transparent hover:border-border"
+              title="Download PDF"
+            >
+              <Download className="w-4 h-4" />
+            </button>
           )}
           
           <button
